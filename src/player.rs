@@ -37,7 +37,7 @@ impl Player {
             vx: 0.0,
             vy: 0.0,
 
-            angle: -PI / 2.0,
+            angle: PI / 2.0,
 
             left: false,
             right: false,
@@ -78,17 +78,17 @@ impl Player {
                 let num_particles =
                     (constants::particle::thrust::PARTICLES_PER_SECOND / fps) as i32;
 
-                let vel = -rand::rng().random_range(constants::particle::thrust::VEL_RANGE);
-                let angle = self.angle
-                    + rand::rng().random_range(
-                        -constants::particle::thrust::ANGLE_OFFSET
-                            ..constants::particle::thrust::ANGLE_OFFSET,
-                    );
-
-                let vx = vel * angle.cos() + self.vx;
-                let vy = vel * angle.sin() + self.vy;
-
                 (0..num_particles).for_each(|_| {
+                    let vel = -rand::rng().random_range(constants::particle::thrust::VEL_RANGE);
+                    let angle = self.angle
+                        + rand::rng().random_range(
+                            -constants::particle::thrust::ANGLE_OFFSET
+                                ..constants::particle::thrust::ANGLE_OFFSET,
+                        );
+
+                    let vx = vel * angle.cos() + self.vx;
+                    let vy = vel * angle.sin() + self.vy;
+
                     self.particles_to_spawn
                         .push(Particle::new(self.x, self.y, vx, vy))
                 });
@@ -99,6 +99,7 @@ impl Player {
                     (1000.0 / constants::particle::thrust::PARTICLES_PER_SECOND) as u64;
 
                 if self.last_thrust_particle + ms_per_particle < unsafe { SDL_GetTicks64() } {
+                    self.last_thrust_particle = unsafe { SDL_GetTicks64() };
                     let vel = -rand::rng().random_range(constants::particle::thrust::VEL_RANGE);
                     let angle = self.angle
                         + rand::rng().random_range(

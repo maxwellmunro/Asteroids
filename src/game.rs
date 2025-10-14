@@ -3,6 +3,7 @@ use crate::bullet::Bullet;
 use crate::constants;
 use crate::particle::Particle;
 use crate::player::Player;
+use crate::polygon::point_intersects_polygon;
 use rand::Rng;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -98,10 +99,18 @@ impl Game {
             }
 
             let now = unsafe { SDL_GetTicks64() };
-            let dt = (now - last_tick) as f32 / 1000.0;
+            let mut dt = (now - last_tick) as f32 / 1000.0;
             last_tick = now;
 
-            self.tick(dt);
+            let fps = (1000.0 / dt) as u32;
+            if fps > constants::physics::PHYSICS_STEPS_PER_SECOND {
+                self.tick(dt);
+            } else {
+                let steps = constants::physics::PHYSICS_STEPS_PER_SECOND / fps;
+                dt /= steps as f32;
+                (0..steps).for_each(|_| self.tick(dt));
+            }
+
             if let Err(e) = self.render() {
                 println!("Error rendering game: {}", e);
             }
@@ -131,10 +140,38 @@ impl Game {
             .iter_mut()
             .for_each(|p| p.tick(dt, self.screen_bounds));
 
-        self.bullets.retain(|b| b.is_alive());
-        self.bullets
-            .iter_mut()
-            .for_each(|b| b.tick(dt, self.screen_bounds));
+        self.bullets.retain(|b| b.is_alive() && !b.to_die);
+        self.bullets.iter_mut().for_each(|b| {
+            b.tick(dt, self.screen_bounds);
+            self.particles.append(&mut b.get_particles_to_spawn())
+        });
+
+        let mut asteroids_to_add: Vec<Asteroid> = Vec::new();
+
+        self.asteroids.retain(|a| {
+            let remove = self.bullets.iter_mut().any(|b| {
+                let intersects = point_intersects_polygon(b.get_location(), a.get_hitbox()) && !b.to_die;
+                if intersects {
+                    b.to_die = true;
+
+                    self.score += (constants::asteroid::SCORE_PER_RADIUS / a.get_radius()) as u32;
+                    println!("Score: {}", self.score);
+                }
+
+                intersects
+            });
+
+            if remove {
+                if let Some(mut asteroids) = a.check_split() {
+                    asteroids_to_add.append(&mut asteroids);
+                }
+                self.particles.append(&mut Particle::generate_explosion_particles(a.get_x(), a.get_y()));
+            }
+
+            !remove
+        });
+
+        self.asteroids.append(&mut asteroids_to_add);
 
         self.asteroids
             .iter_mut()

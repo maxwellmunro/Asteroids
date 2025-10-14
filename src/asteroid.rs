@@ -20,7 +20,7 @@ pub struct Asteroid {
 
 impl Asteroid {
     pub fn new(x: f32, y: f32, radius: f32) -> Self {
-        let points = (radius * constants::asteroid::POINTS_PER_RADIUS) as i32;
+        let points = (radius * constants::asteroid::POINTS_PER_RADIUS).max(3.0) as i32;
 
         let shape = (0..points)
             .map(|i| {
@@ -117,5 +117,37 @@ impl Asteroid {
         }
 
         best_point
+    }
+
+    pub fn check_split(&self) -> Option<Vec<Asteroid>> {
+        let r = self.radius / 2.0;
+
+        if r < constants::asteroid::MIN_RADIUS {
+            return None;
+        }
+
+        Some(vec![
+            Asteroid::new(self.x, self.y, r),
+            Asteroid::new(self.x, self.y, r),
+        ])
+    }
+
+    pub fn get_hitbox(&self) -> Vec<(f32, f32)> {
+        self.shape
+            .iter()
+            .map(|p| (p[0] + self.x, p[1] + self.y))
+            .collect()
+    }
+
+    pub fn get_x(&self) -> f32 {
+        self.x
+    }
+
+    pub fn get_y(&self) -> f32 {
+        self.y
+    }
+    
+    pub fn get_radius(&self) -> f32 {
+        self.radius
     }
 }
