@@ -1,9 +1,10 @@
 use crate::asteroid::Asteroid;
 use crate::bullet::Bullet;
 use crate::constants;
+use crate::font;
 use crate::particle::Particle;
 use crate::player::Player;
-use crate::polygon::point_intersects_polygon;
+use crate::polygon;
 use rand::Rng;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -99,17 +100,10 @@ impl Game {
             }
 
             let now = unsafe { SDL_GetTicks64() };
-            let mut dt = (now - last_tick) as f32 / 1000.0;
+            let dt = (now - last_tick) as f32 / 1000.0;
             last_tick = now;
 
-            let fps = (1000.0 / dt) as u32;
-            if fps > constants::physics::PHYSICS_STEPS_PER_SECOND {
-                self.tick(dt);
-            } else {
-                let steps = constants::physics::PHYSICS_STEPS_PER_SECOND / fps;
-                dt /= steps as f32;
-                (0..steps).for_each(|_| self.tick(dt));
-            }
+            self.tick(dt);
 
             if let Err(e) = self.render() {
                 println!("Error rendering game: {}", e);
@@ -150,12 +144,14 @@ impl Game {
 
         self.asteroids.retain(|a| {
             let remove = self.bullets.iter_mut().any(|b| {
-                let intersects = point_intersects_polygon(b.get_location(), a.get_hitbox()) && !b.to_die;
+                let line = b.get_physics_trail(dt);
+                let intersects =
+                    polygon::polygons_intersect(line.as_slice(), a.get_hitbox().as_slice())
+                        && !b.to_die;
                 if intersects {
                     b.to_die = true;
 
                     self.score += (constants::asteroid::SCORE_PER_RADIUS / a.get_radius()) as u32;
-                    println!("Score: {}", self.score);
                 }
 
                 intersects
@@ -165,7 +161,11 @@ impl Game {
                 if let Some(mut asteroids) = a.check_split() {
                     asteroids_to_add.append(&mut asteroids);
                 }
-                self.particles.append(&mut Particle::generate_explosion_particles(a.get_x(), a.get_y()));
+                self.particles
+                    .append(&mut Particle::generate_explosion_particles(
+                        a.get_x(),
+                        a.get_y(),
+                    ));
             }
 
             !remove
@@ -173,9 +173,15 @@ impl Game {
 
         self.asteroids.append(&mut asteroids_to_add);
 
-        self.asteroids
-            .iter_mut()
-            .for_each(|a| a.tick(dt, self.screen_bounds));
+        self.asteroids.iter_mut().for_each(|a| {
+            a.tick(dt, self.screen_bounds);
+            if polygon::polygons_intersect(
+                a.get_hitbox().as_slice(),
+                self.player.get_hitbox().as_slice(),
+            ) {
+                println!("Died!");
+            }
+        });
     }
 
     fn render(&mut self) -> Result<(), String> {
@@ -195,6 +201,8 @@ impl Game {
         self.asteroids
             .iter()
             .try_for_each(|a| a.render(&mut self.canvas, self.screen_bounds))?;
+
+        font::render_text(self.score.to_string().as_str(), 10, 10, &mut self.canvas)?;
 
         self.canvas.present();
 

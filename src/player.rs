@@ -185,15 +185,26 @@ impl Player {
         Bullet::new(x, y, self.angle)
     }
 
-    pub fn get_pos(&self) -> String {
-        format!("X: {}, y: {}", self.x, self.y)
-    }
-
     pub fn get_x(&self) -> f32 {
         self.x
     }
 
     pub fn get_y(&self) -> f32 {
         self.y
+    }
+
+    pub fn get_hitbox(&self) -> Vec<(f32, f32)> {
+        constants::player::PLAYER_SHAPE
+            .iter()
+            .map(|p| {
+                let angle = p[1].atan2(p[0]) + self.angle + PI / 2.0;
+                let dist = (p[0] * p[0] + p[1] * p[1]).sqrt();
+
+                let x = dist * angle.cos() + self.x;
+                let y = dist * angle.sin() + self.y;
+
+                (x, y)
+            })
+            .collect::<Vec<(f32, f32)>>()
     }
 }

@@ -1,7 +1,3 @@
-pub mod physics {
-    pub const PHYSICS_STEPS_PER_SECOND: u32 = 100;
-}
-
 pub mod window {
     pub const TITLE: &str = "Asteroids";
     pub const WRAPPING_VALS: [[i32; 2]; 9] = [
@@ -59,13 +55,78 @@ pub mod bullet {
 pub mod asteroid {
     use std::ops::Range;
 
-    pub const MIN_RADIUS: f32 = 10.0;
+    pub const MIN_RADIUS: f32 = 15.0;
     pub const SPAWN_RADIUS_RANGE: Range<f64> = 50.0..100.0;
     pub const RADIUS_OFFSET_FAC: f32 = 0.4;
-    pub const POINTS_PER_RADIUS: f32 = 0.4;
+    pub const POINTS_PER_RADIUS: f32 = 0.2;
     pub const VEL_RANGE: Range<f32> = 10.0..50.0;
-    pub const SPAWN_RATE: f32 = 0.01;
+    pub const SPAWN_RATE: f32 = 0.005;
     pub const MAX_SPAWN_ATTEMPTS: u32 = 10;
     pub const MIN_SPAWN_DISTANCE: f32 = 500.0 * 500.0;
     pub const SCORE_PER_RADIUS: f32 = 100.0;
+}
+
+pub mod font {
+    pub const FONT_SIZE: u32 = 50;
+    pub const MARGIN: u32 = 20;
+    pub const NUMBERS: [&[[(i32, i32); 2]]; 10] = [
+        &[
+            [(0, 0), (1, 0)],
+            [(1, 0), (1, 2)],
+            [(0, 2), (1, 2)],
+            [(0, 0), (0, 2)],
+        ],
+        &[
+            [(1, 0), (1, 2)]
+        ],
+        &[
+            [(0, 0), (1, 0)],
+            [(1, 0), (1, 1)],
+            [(1, 1), (0, 1)],
+            [(0, 1), (0, 2)],
+            [(0, 2), (1, 2)],
+        ],
+        &[
+            [(0, 0), (1, 0)],
+            [(1, 0), (1, 2)],
+            [(1, 1), (0, 1)],
+            [(1, 2), (0, 2)],
+        ],
+        &[
+            [(0, 0), (0, 1)],
+            [(0, 1), (1, 1)],
+            [(1, 0), (1, 2)],
+        ],
+        &[
+            [(0, 0), (1, 0)],
+            [(0, 0), (0, 1)],
+            [(0, 1), (1, 1)],
+            [(1, 1), (1, 2)],
+            [(1, 2), (0, 2)],
+        ],
+        &[
+            [(0, 0), (1, 0)],
+            [(0, 0), (0, 2)],
+            [(0, 1), (1, 1)],
+            [(1, 1), (1, 2)],
+            [(0, 2), (1, 2)],
+        ],
+        &[
+            [(0, 0), (1, 0)],
+            [(1, 0), (1, 2)],
+        ],
+        &[
+            [(0, 0), (1, 0)],
+            [(1, 0), (1, 2)],
+            [(0, 2), (1, 2)],
+            [(0, 0), (0, 2)],
+            [(0, 1), (1, 1)],
+        ],
+        &[
+            [(0, 0), (0, 1)],
+            [(0, 1), (1, 1)],
+            [(1, 0), (1, 2)],
+            [(0, 0), (1, 0)],
+        ]
+    ];
 }

@@ -123,4 +123,11 @@ impl Bullet {
     pub fn get_location(&self) -> (f32, f32) {
         (self.x, self.y)
     }
+
+    pub fn get_physics_trail(&self, dt: f32) -> Vec<(f32, f32)> {
+        vec![
+            (self.x, self.y),
+            (self.x + self.vx * dt, self.y + self.vy * dt),
+        ]
+    }
 }
