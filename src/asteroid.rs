@@ -132,11 +132,16 @@ impl Asteroid {
         ])
     }
 
-    pub fn get_hitbox(&self) -> Vec<(f32, f32)> {
-        self.shape
-            .iter()
-            .map(|p| (p[0] + self.x, p[1] + self.y))
-            .collect()
+    pub fn get_hitboxes(&self, screen_bounds: Rect) -> Vec<Vec<(f32, f32)>> {
+        constants::window::WRAPPING_VALS.iter().map(|v| {
+            let dx = v[0] * screen_bounds.width() as i32;
+            let dy = v[1] * screen_bounds.height() as i32;
+            
+            self.shape
+                .iter()
+                .map(|p| (p[0] + self.x + dx as f32, p[1] + self.y + dy as f32))
+                .collect()
+        }).collect::<Vec<Vec<(f32, f32)>>>()
     }
 
     pub fn get_x(&self) -> f32 {

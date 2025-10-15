@@ -37,7 +37,7 @@ impl Player {
             vx: 0.0,
             vy: 0.0,
 
-            angle: PI / 2.0,
+            angle: -PI / 2.0,
 
             left: false,
             right: false,
@@ -206,5 +206,15 @@ impl Player {
                 (x, y)
             })
             .collect::<Vec<(f32, f32)>>()
+    }
+
+    pub fn die(&mut self, screen_bounds: Rect) {
+        self.x = screen_bounds.width() as f32 / 2.0;
+        self.y = screen_bounds.height() as f32 / 2.0;
+
+        self.vx = 0.0;
+        self.vy = 0.0;
+
+        self.angle = -PI / 2.0;
     }
 }
