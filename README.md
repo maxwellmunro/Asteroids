@@ -21,3 +21,4 @@ WAD/arrow keys to move, space to shoot.
 - Asteroid splitting
 - Score/PB system
 - Delta time
+- Aliens
