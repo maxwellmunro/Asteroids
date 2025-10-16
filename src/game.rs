@@ -1,3 +1,4 @@
+use crate::alien::{Alien, ShootingType};
 use crate::asteroid::Asteroid;
 use crate::bullet::Bullet;
 use crate::constants;
@@ -6,6 +7,7 @@ use crate::high_score;
 use crate::particle::Particle;
 use crate::player::Player;
 use crate::polygon;
+use crate::polygon::point_intersects_polygon;
 use rand::Rng;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -28,6 +30,7 @@ pub struct Game {
 
     space_released: bool,
     next_asteroid_spawn: u64,
+    next_alien_spawn: u64,
 
     lives: u32,
     next_life_points: u64,
@@ -40,6 +43,7 @@ pub struct Game {
     particles: Vec<Particle>,
     bullets: Vec<Bullet>,
     asteroids: Vec<Asteroid>,
+    aliens: Vec<Alien>,
 
     state: GameState,
 }
@@ -83,6 +87,7 @@ impl Game {
 
             space_released: true,
             next_asteroid_spawn: Self::get_next_asteroid_spawn(0),
+            next_alien_spawn: constants::alien::SPAWN_DELAY,
 
             lives: constants::player::START_LIVES,
             next_life_points: constants::player::POINTS_PER_LIFE,
@@ -95,6 +100,7 @@ impl Game {
             particles: Vec::new(),
             bullets: Vec::new(),
             asteroids: Vec::new(),
+            aliens: Vec::new(),
 
             state: GameState::MainMenu,
         })
@@ -163,6 +169,18 @@ impl Game {
             self.asteroids.push(Asteroid::new(x, y, radius as f32));
         }
 
+        if unsafe { SDL_GetTicks64() } > self.next_alien_spawn
+            && constants::alien::MAX_ALIENS > self.aliens.len() as u32
+        {
+            let res = Alien::new(self.score, self.screen_bounds);
+
+            if let Some(alien) = res {
+                self.next_alien_spawn = unsafe { SDL_GetTicks64() } + constants::alien::SPAWN_DELAY;
+
+                self.aliens.push(alien);
+            }
+        }
+
         self.player.tick(dt, self.screen_bounds);
         self.particles.append(&mut self.player.get_particles());
 
@@ -171,7 +189,20 @@ impl Game {
             .iter_mut()
             .for_each(|p| p.tick(dt, self.screen_bounds));
 
-        self.bullets.retain(|b| b.is_alive() && !b.to_die);
+        let mut to_die = false;
+
+        self.bullets.retain(|b| {
+            if point_intersects_polygon(b.get_location(), self.player.get_hitbox().as_slice()) {
+                to_die = true;
+                return false;
+            }
+            b.is_alive() && !b.to_die
+        });
+
+        if to_die {
+            self.die();
+        }
+
         self.bullets.iter_mut().for_each(|b| {
             b.tick(dt, self.screen_bounds);
             self.particles.append(&mut b.get_particles_to_spawn())
@@ -227,6 +258,47 @@ impl Game {
         }) {
             self.die();
         }
+
+        self.aliens.retain(|a| {
+            !self.bullets.iter_mut().any(|b| {
+                let line = b.get_physics_trail(dt);
+                let intersects = a
+                    .get_hitboxes(self.screen_bounds)
+                    .iter()
+                    .any(|hitbox| polygon::polygons_intersect(hitbox, line.as_slice()))
+                    && !b.to_die;
+
+                if intersects {
+                    b.to_die = true;
+
+                    self.score += match a.get_type() {
+                        ShootingType::Random => constants::alien::random::POINTS,
+                        ShootingType::Current => constants::alien::current::POINTS,
+                        ShootingType::Future => constants::alien::future::POINTS,
+                    } as u64;
+
+                    if self.score > self.next_life_points {
+                        self.next_life_points += constants::player::POINTS_PER_LIFE;
+                        self.lives += 1;
+                    }
+                }
+
+                intersects
+            })
+        });
+
+        self.aliens.iter_mut().for_each(|a| {
+            a.tick(
+                dt,
+                self.screen_bounds,
+                self.score,
+                self.player.get_pos_and_vel(),
+            );
+
+            if let Some(bullet) = a.get_bullet() {
+                self.bullets.push(bullet);
+            }
+        });
     }
 
     fn render_game(&mut self) -> Result<(), String> {
@@ -244,6 +316,10 @@ impl Game {
             .try_for_each(|b| b.render(&mut self.canvas))?;
 
         self.asteroids
+            .iter()
+            .try_for_each(|a| a.render(&mut self.canvas, self.screen_bounds))?;
+
+        self.aliens
             .iter()
             .try_for_each(|a| a.render(&mut self.canvas, self.screen_bounds))?;
 
@@ -331,6 +407,7 @@ impl Game {
         self.asteroids.clear();
         self.particles.clear();
         self.bullets.clear();
+        self.aliens.clear();
 
         if self.lives == 1 {
             self.lives = constants::player::START_LIVES;

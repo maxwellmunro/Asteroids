@@ -7,6 +7,7 @@ use sdl2::render::Canvas;
 use sdl2::sys::SDL_GetTicks64;
 use sdl2::video::Window;
 
+#[derive(Clone)]
 pub struct Bullet {
     x: f32,
     y: f32,
@@ -125,5 +126,9 @@ impl Bullet {
             (self.x, self.y),
             (self.x + self.vx * dt, self.y + self.vy * dt),
         ]
+    }
+    
+    pub fn get_location(&self) -> (f32, f32) {
+        (self.x, self.y)
     }
 }

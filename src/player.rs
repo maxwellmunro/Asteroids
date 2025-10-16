@@ -180,8 +180,8 @@ impl Player {
     }
 
     pub fn shoot_bullet(&self) -> Bullet {
-        let x = self.x - constants::player::PLAYER_SHAPE[0][1] * self.angle.cos();
-        let y = self.y - constants::player::PLAYER_SHAPE[0][1] * self.angle.sin();
+        let x = self.x - (constants::player::PLAYER_SHAPE[0][1] - 5.0) * self.angle.cos();
+        let y = self.y - (constants::player::PLAYER_SHAPE[0][1] - 5.0) * self.angle.sin();
         Bullet::new(x, y, self.angle)
     }
 
@@ -216,5 +216,9 @@ impl Player {
         self.vy = 0.0;
 
         self.angle = -PI / 2.0;
+    }
+
+    pub fn get_pos_and_vel(&self) -> (f32, f32, f32, f32) {
+        (self.x, self.y, self.vx, self.vy)
     }
 }
