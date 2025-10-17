@@ -102,7 +102,7 @@ impl Alien {
             vy,
 
             shooting_type: ShootingType::Random,
-            next_shot: unsafe { SDL_GetTicks64() },
+            next_shot: unsafe { SDL_GetTicks64() } + 1000,
 
             bullet: None,
         }
@@ -122,7 +122,7 @@ impl Alien {
             vy,
 
             shooting_type: ShootingType::Current,
-            next_shot: unsafe { SDL_GetTicks64() },
+            next_shot: unsafe { SDL_GetTicks64() } + 1000,
 
             bullet: None,
         }
@@ -142,7 +142,7 @@ impl Alien {
             vy,
 
             shooting_type: ShootingType::Future,
-            next_shot: unsafe { SDL_GetTicks64() },
+            next_shot: unsafe { SDL_GetTicks64() } + 1000,
 
             bullet: None,
         }
@@ -236,7 +236,7 @@ impl Alien {
         let b_x = self.x + constants::alien::SHOOT_RADIUS * angle.cos();
         let b_y = self.y + constants::alien::SHOOT_RADIUS * angle.sin();
 
-        self.bullet = Some(Bullet::new(b_x, b_y, angle));
+        self.bullet = Some(Bullet::new(b_x, b_y, angle, false));
 
         Ok(())
     }
@@ -300,5 +300,13 @@ impl Alien {
 
     pub fn get_type(&self) -> ShootingType {
         self.shooting_type.clone()
+    }
+
+    pub fn get_x(&self) -> f32 {
+        self.x
+    }
+
+    pub fn get_y(&self) -> f32 {
+        self.y
     }
 }

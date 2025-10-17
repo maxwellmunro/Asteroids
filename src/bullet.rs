@@ -19,10 +19,11 @@ pub struct Bullet {
     particles_to_spawn: Vec<Particle>,
 
     pub to_die: bool,
+    is_player_shot: bool,
 }
 
 impl Bullet {
-    pub fn new(x: f32, y: f32, angle: f32) -> Bullet {
+    pub fn new(x: f32, y: f32, angle: f32, is_player_shot: bool) -> Bullet {
         let vx = constants::bullet::VEL * angle.cos();
         let vy = constants::bullet::VEL * angle.sin();
 
@@ -37,6 +38,7 @@ impl Bullet {
             particles_to_spawn: Vec::new(),
 
             to_die: false,
+            is_player_shot,
         }
     }
 
@@ -130,5 +132,9 @@ impl Bullet {
     
     pub fn get_location(&self) -> (f32, f32) {
         (self.x, self.y)
+    }
+
+    pub fn get_is_player_shot(&self) -> bool {
+        self.is_player_shot
     }
 }

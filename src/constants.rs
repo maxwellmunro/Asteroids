@@ -62,11 +62,22 @@ pub mod asteroid {
     pub const RADIUS_OFFSET_FAC: f32 = 0.4;
     pub const POINTS_PER_RADIUS: f32 = 0.2;
     pub const VEL_RANGE: Range<f32> = 10.0..50.0;
-    pub const SPAWN_RATE: f32 = 0.005;
     pub const MAX_SPAWN_ATTEMPTS: u32 = 10;
     pub const MIN_SPAWN_DISTANCE: f32 = 500.0 * 500.0;
     pub const SCORE_PER_RADIUS: f32 = 100.0;
-    pub const MAX_ASTEROIDS: u32 = 30;
+    pub const SPAWN_DELAYS: &[[u64; 2]] = &[
+        [0, 5000],
+        [500, 4500],
+        [1000, 4000],
+        [1500, 3700],
+        [2000, 3500],
+        [3000, 3200],
+        [5000, 3000],
+        [10000, 2500],
+        [20000, 2000],
+        [30000, 1500],
+        [40000, 1000],
+    ];
 }
 
 pub mod font {
@@ -304,7 +315,17 @@ pub mod strings {
 }
 
 pub mod alien {
-    pub const SPAWN_DELAY: u64 = 10000;
+    pub const SPAWN_DELAYS: &[[u64; 2]] = &[
+        [1_000, 30_000],
+        [2_000, 20_000],
+        [3_000, 15_000],
+        [5_000, 10_000],
+        [10_000, 8_000],
+        [20_000, 5_000],
+        [40_000, 3_000],
+        [50_000, 2_000],
+        [70_000, 1_000],
+    ];
     pub const MAX_ALIENS: u32 = 3;
     pub const SHOOT_RADIUS: f32 = 50.0;
     pub mod random {

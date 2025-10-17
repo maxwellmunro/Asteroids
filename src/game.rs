@@ -77,7 +77,7 @@ impl Game {
             (screen_bounds.height() / 2) as f32,
         );
 
-        let pb = high_score::load_score("highscore.bin").unwrap_or(0);
+        let pb = high_score::load_score().unwrap_or(0);
 
         Ok(Self {
             canvas,
@@ -87,7 +87,7 @@ impl Game {
 
             space_released: true,
             next_asteroid_spawn: Self::get_next_asteroid_spawn(0),
-            next_alien_spawn: constants::alien::SPAWN_DELAY,
+            next_alien_spawn: 0,
 
             lives: constants::player::START_LIVES,
             next_life_points: constants::player::POINTS_PER_LIFE,
@@ -153,9 +153,7 @@ impl Game {
     }
 
     fn tick_game(&mut self, dt: f32) {
-        if unsafe { SDL_GetTicks64() } > self.next_asteroid_spawn
-            && constants::asteroid::MAX_ASTEROIDS > self.asteroids.len() as u32
-        {
+        if unsafe { SDL_GetTicks64() } > self.next_asteroid_spawn {
             self.next_asteroid_spawn = Self::get_next_asteroid_spawn(self.score);
 
             let (x, y) = Asteroid::get_spawn_location(
@@ -175,7 +173,7 @@ impl Game {
             let res = Alien::new(self.score, self.screen_bounds);
 
             if let Some(alien) = res {
-                self.next_alien_spawn = unsafe { SDL_GetTicks64() } + constants::alien::SPAWN_DELAY;
+                self.next_alien_spawn = Game::get_next_alien_spawn(self.score);
 
                 self.aliens.push(alien);
             }
@@ -192,7 +190,9 @@ impl Game {
         let mut to_die = false;
 
         self.bullets.retain(|b| {
-            if point_intersects_polygon(b.get_location(), self.player.get_hitbox().as_slice()) {
+            if !b.get_is_player_shot()
+                && point_intersects_polygon(b.get_location(), self.player.get_hitbox().as_slice())
+            {
                 to_die = true;
                 return false;
             }
@@ -260,7 +260,7 @@ impl Game {
         }
 
         self.aliens.retain(|a| {
-            !self.bullets.iter_mut().any(|b| {
+            let remove = self.bullets.iter_mut().any(|b| {
                 let line = b.get_physics_trail(dt);
                 let intersects = a
                     .get_hitboxes(self.screen_bounds)
@@ -284,7 +284,17 @@ impl Game {
                 }
 
                 intersects
-            })
+            });
+
+            if remove {
+                self.particles
+                    .append(&mut Particle::generate_explosion_particles(
+                        a.get_x(),
+                        a.get_y(),
+                    ));
+            }
+
+            !remove
         });
 
         self.aliens.iter_mut().for_each(|a| {
@@ -376,6 +386,10 @@ impl Game {
             GameState::MainMenu => {
                 if key == Keycode::SPACE {
                     self.state = GameState::InGame;
+                    self.player.set_location(
+                        self.screen_bounds.width() as f32 / 2.0,
+                        self.screen_bounds.height() as f32 / 2.0,
+                    );
                 }
             }
             GameState::InGame => {
@@ -393,12 +407,23 @@ impl Game {
     }
 
     fn get_next_asteroid_spawn(score: u64) -> u64 {
-        let offset = if score < 50 {
-            20.0 / constants::asteroid::SPAWN_RATE
-        } else {
-            1000.0 / (score as f32 * constants::asteroid::SPAWN_RATE)
-        } as u64;
-        (unsafe { SDL_GetTicks64() } as u64) + offset
+        let delay = constants::asteroid::SPAWN_DELAYS
+            .iter()
+            .map(|d| if score >= d[0] { d[1] } else { u64::MAX })
+            .min()
+            .unwrap();
+
+        (unsafe { SDL_GetTicks64() } as u64) + delay
+    }
+
+    fn get_next_alien_spawn(score: u64) -> u64 {
+        let delay = constants::alien::SPAWN_DELAYS
+            .iter()
+            .map(|d| if score >= d[0] { d[1] } else { u64::MAX })
+            .min()
+            .unwrap();
+
+        (unsafe { SDL_GetTicks64() } as u64) + delay
     }
 
     fn die(&mut self) {
@@ -413,9 +438,7 @@ impl Game {
             self.lives = constants::player::START_LIVES;
 
             if self.score > self.pb {
-                if let Err(e) =
-                    high_score::save_score(constants::strings::HIGH_SCORE_PATH, self.score)
-                {
+                if let Err(e) = high_score::save_score(self.score) {
                     println!("{}{}", constants::strings::HIGH_SCORE_ERROR, e);
                 }
 
@@ -423,6 +446,7 @@ impl Game {
             }
 
             self.score = 0;
+            self.state = GameState::MainMenu;
         } else {
             self.lives -= 1;
         }
