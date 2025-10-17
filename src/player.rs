@@ -166,9 +166,9 @@ impl Player {
 
     pub fn handle_key_event(&mut self, key: Keycode, pressed: bool) {
         match key {
-            Keycode::Left => self.left = pressed,
-            Keycode::Right => self.right = pressed,
-            Keycode::Up => self.up = pressed,
+            Keycode::A | Keycode::Left => self.left = pressed,
+            Keycode:: D | Keycode::Right => self.right = pressed,
+            Keycode:: W | Keycode::Up => self.up = pressed,
             _ => {}
         }
     }
@@ -225,5 +225,10 @@ impl Player {
     pub fn set_location(&mut self, x: f32, y: f32) {
         self.x = x;
         self.y = y;
+    }
+
+    pub fn apply_force(&mut self, force: (f32, f32)) {
+        self.vx += force.0;
+        self.vy += force.1;
     }
 }

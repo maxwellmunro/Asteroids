@@ -64,7 +64,7 @@ pub mod asteroid {
     pub const VEL_RANGE: Range<f32> = 10.0..50.0;
     pub const MAX_SPAWN_ATTEMPTS: u32 = 10;
     pub const MIN_SPAWN_DISTANCE: f32 = 500.0 * 500.0;
-    pub const SCORE_PER_RADIUS: f32 = 100.0;
+    pub const SCORE_PER_RADIUS: f32 = 200.0;
     pub const SPAWN_DELAYS: &[[u64; 2]] = &[
         [0, 5000],
         [500, 4500],
@@ -312,6 +312,7 @@ pub mod strings {
     pub const HIGH_SCORE_ERROR: &str = "Error saving high score: ";
     pub const START_TEXT: &str = "press space to start";
     pub const WINDOW_SIZE_ERROR: &str = "Window too small";
+    pub const PAUSED_TEXT: &str = "game paused";
 }
 
 pub mod alien {
@@ -334,7 +335,7 @@ pub mod alien {
         pub const MIN_POINTS: u64 = 1000;
         pub const VEL_RANGE: Range<f32> = 100.0..150.0;
         pub const SHOTS_PER_SECOND_PER_POINT: f32 = 0.0002;
-        pub const POINTS: u32 = 25;
+        pub const POINTS: u32 = 50;
         pub const SHAPE: &[(f32, f32)] = &[
             (-20.0, -20.0),
             (20.0, -20.0),
@@ -357,7 +358,7 @@ pub mod alien {
         pub const MIN_POINTS: u64 = 2000;
         pub const VEL_RANGE: Range<f32> = 120.0..200.0;
         pub const SHOTS_PER_SECOND_PER_POINT: f32 = 0.0001;
-        pub const POINTS: u32 = 50;
+        pub const POINTS: u32 = 100;
         pub const SHAPE: &[(f32, f32)] = &[
             (-15.0, -15.0),
             (15.0, -15.0),
@@ -396,4 +397,33 @@ pub mod alien {
             (15.0, -15.0),
         ];
     }
+}
+
+pub mod black_hole {
+    use std::f32::consts::PI;
+    use std::ops::Range;
+
+    pub const MIN_POINTS: u64 = 5_000;
+    pub const MAX_RADII_RANGE: Range<f32> = 100.0..150.0;
+    pub const MAX_TIME_RANGE: Range<u64> = 0..10_000;
+    pub const GROWTH_RATE: f32 = 5.0;
+    pub const SHRINK_RATE: f32 = 20.0;
+    pub const SPAWN_DELAYS: &[[u64; 2]] = &[
+        [5_000, 180_000],
+        [6_000, 120_000],
+        [7_000, 80_000],
+        [8_000, 60_000],
+        [9_000, 45_000],
+        [10_000, 30_000],
+        [20_000, 15_000],
+    ];
+    pub const RANGE_FAC: f32 = 7.0;
+    pub const FORCE_FAC: f32 = 200_000.0;
+
+    // visuals
+
+    pub const ROT_RATE: f32 = PI / 2.0;
+    pub const LINES: u32 = 6;
+    pub const LINE_ROT: f32 = PI;
+    pub const LINE_RES: u32 = 32;
 }

@@ -1,5 +1,6 @@
 use crate::alien::{Alien, ShootingType};
 use crate::asteroid::Asteroid;
+use crate::black_hole::BlackHole;
 use crate::bullet::Bullet;
 use crate::constants;
 use crate::font;
@@ -31,6 +32,7 @@ pub struct Game {
     space_released: bool,
     next_asteroid_spawn: u64,
     next_alien_spawn: u64,
+    next_black_hole_spawn: u64,
 
     lives: u32,
     next_life_points: u64,
@@ -44,8 +46,10 @@ pub struct Game {
     bullets: Vec<Bullet>,
     asteroids: Vec<Asteroid>,
     aliens: Vec<Alien>,
+    black_holes: Vec<BlackHole>,
 
     state: GameState,
+    paused: bool,
 }
 
 impl Game {
@@ -88,6 +92,7 @@ impl Game {
             space_released: true,
             next_asteroid_spawn: Self::get_next_asteroid_spawn(0),
             next_alien_spawn: 0,
+            next_black_hole_spawn: 0,
 
             lives: constants::player::START_LIVES,
             next_life_points: constants::player::POINTS_PER_LIFE,
@@ -101,8 +106,10 @@ impl Game {
             bullets: Vec::new(),
             asteroids: Vec::new(),
             aliens: Vec::new(),
+            black_holes: Vec::new(),
 
             state: GameState::MainMenu,
+            paused: false,
         })
     }
 
@@ -142,7 +149,9 @@ impl Game {
                     }
                 }
                 GameState::InGame => {
-                    self.tick_game(dt);
+                    if !self.paused {
+                        self.tick_game(dt);
+                    }
 
                     if let Err(e) = self.render_game() {
                         println!("{}{}", constants::strings::RENDER_ERROR, e);
@@ -177,6 +186,13 @@ impl Game {
 
                 self.aliens.push(alien);
             }
+        }
+
+        if unsafe { SDL_GetTicks64() } > self.next_black_hole_spawn
+            && self.score >= constants::black_hole::MIN_POINTS
+        {
+            self.next_black_hole_spawn = Game::get_next_black_hole_spawn(self.score);
+            self.black_holes.push(BlackHole::new(self.screen_bounds));
         }
 
         self.player.tick(dt, self.screen_bounds);
@@ -309,11 +325,36 @@ impl Game {
                 self.bullets.push(bullet);
             }
         });
+
+        self.black_holes.retain(|b| b.is_alive());
+
+        self.black_holes.iter_mut().for_each(|b| {
+            b.tick(dt);
+
+            let force = b.get_force(self.player.get_x(), self.player.get_y(), dt);
+            self.player.apply_force(force);
+        });
     }
 
     fn render_game(&mut self) -> Result<(), String> {
         self.canvas.set_draw_color(Color::RGB(0, 0, 0));
         self.canvas.clear();
+
+        if self.paused {
+            let text_len = constants::strings::PAUSED_TEXT.len() as u32;
+
+            let text_width = (text_len * constants::font::FONT_SIZE) + ((text_len - 1) * constants::font::MARGIN);
+            font::render_text(
+                constants::strings::PAUSED_TEXT,
+                (self.screen_bounds.width() - text_width) as i32 / 2,
+                (self.screen_bounds.height() / 2 - constants::font::FONT_SIZE) as i32,
+                &mut self.canvas,
+            )?;
+
+            self.canvas.present();
+
+            return Ok(());
+        }
 
         self.player.render(&mut self.canvas, self.screen_bounds)?;
 
@@ -332,6 +373,10 @@ impl Game {
         self.aliens
             .iter()
             .try_for_each(|a| a.render(&mut self.canvas, self.screen_bounds))?;
+
+        self.black_holes
+            .iter()
+            .try_for_each(|b| b.render(&mut self.canvas, self.screen_bounds))?;
 
         font::render_text(self.score.to_string().as_str(), 10, 10, &mut self.canvas)?;
         let pb_str = self.pb.to_string();
@@ -393,6 +438,14 @@ impl Game {
                 }
             }
             GameState::InGame => {
+                if key == Keycode::P && pressed {
+                    self.paused = !self.paused;
+                }
+
+                if self.paused {
+                    return;
+                }
+
                 self.player.handle_key_event(key, pressed);
 
                 if key == Keycode::SPACE {
@@ -413,6 +466,10 @@ impl Game {
             .min()
             .unwrap();
 
+        if delay == u64::MAX {
+            return 0;
+        }
+
         (unsafe { SDL_GetTicks64() } as u64) + delay
     }
 
@@ -422,6 +479,24 @@ impl Game {
             .map(|d| if score >= d[0] { d[1] } else { u64::MAX })
             .min()
             .unwrap();
+
+        if delay == u64::MAX {
+            return 0;
+        }
+
+        (unsafe { SDL_GetTicks64() } as u64) + delay
+    }
+
+    fn get_next_black_hole_spawn(score: u64) -> u64 {
+        let delay = constants::black_hole::SPAWN_DELAYS
+            .iter()
+            .map(|d| if score >= d[0] { d[1] } else { u64::MAX })
+            .min()
+            .unwrap();
+
+        if delay == u64::MAX {
+            return 0;
+        }
 
         (unsafe { SDL_GetTicks64() } as u64) + delay
     }
@@ -433,6 +508,7 @@ impl Game {
         self.particles.clear();
         self.bullets.clear();
         self.aliens.clear();
+        self.black_holes.clear();
 
         if self.lives == 1 {
             self.lives = constants::player::START_LIVES;
@@ -446,7 +522,6 @@ impl Game {
             }
 
             self.score = 0;
-            self.state = GameState::MainMenu;
         } else {
             self.lives -= 1;
         }

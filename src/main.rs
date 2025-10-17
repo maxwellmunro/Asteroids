@@ -10,6 +10,7 @@ mod polygon;
 mod font;
 mod high_score;
 mod alien;
+mod black_hole;
 
 fn main() {
     let mut game = Game::new().unwrap_or_else(|e| panic!("{}", e));

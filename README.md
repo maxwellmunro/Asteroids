@@ -8,7 +8,7 @@ Asteroids game heavily based off [Asteroids 1979](https://en.wikipedia.org/wiki/
 - rand
 
 ## Controls
-WAD/arrow keys to move, space to shoot.
+WAD/arrow keys to move, space to shoot, p to pause.
 
 ## Features
 
@@ -22,3 +22,5 @@ WAD/arrow keys to move, space to shoot.
 - Score/PB system
 - Delta time
 - Aliens
+- Black Holes
+- Pause
